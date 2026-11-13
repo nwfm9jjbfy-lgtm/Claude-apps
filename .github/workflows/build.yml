@@ -1,0 +1,90 @@
+name: 打包
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  ipad:
+    name: DeepSeek Harness（iPad IPA）
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 XcodeGen
+        run: brew install xcodegen
+
+      - name: 生成 Xcode 项目
+        working-directory: DeepSeekHarness
+        run: xcodegen generate
+
+      - name: 编译（不签名）
+        working-directory: DeepSeekHarness
+        run: |
+          xcodebuild -project DeepSeekHarness.xcodeproj -target DeepSeekHarness \
+            -configuration Release -sdk iphoneos \
+            SYMROOT="$PWD/build" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build > xcodebuild.log 2>&1 || { grep -E "error:" xcodebuild.log | sort -u | head -80; exit 1; }
+          tail -3 xcodebuild.log
+
+      - name: 打成 IPA
+        run: |
+          APP=$(find DeepSeekHarness/build/Release-iphoneos -maxdepth 1 -name "*.app" | head -1)
+          echo "找到 $APP"
+          mkdir -p Payload
+          cp -R "$APP" Payload/
+          zip -qry DeepSeekHarness-unsigned.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DeepSeekHarness-unsigned-ipa
+          path: DeepSeekHarness-unsigned.ipa
+
+      - name: 上传编译日志（失败时）
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipad-build-log
+          path: DeepSeekHarness/xcodebuild.log
+
+  watch:
+    name: Claude for Apple Watch（编译检查）
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 XcodeGen
+        run: brew install xcodegen
+
+      - name: 生成 Xcode 项目
+        working-directory: ClaudeWatch
+        run: xcodegen generate
+
+      - name: 编译（不签名）
+        working-directory: ClaudeWatch
+        run: |
+          xcodebuild -project ClaudeWatch.xcodeproj -target ClaudeWatch \
+            -configuration Release -sdk watchos \
+            SYMROOT="$PWD/build" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build > xcodebuild.log 2>&1 || { grep -E "error:" xcodebuild.log | sort -u | head -80; exit 1; }
+          tail -3 xcodebuild.log
+
+      - name: 打包 .app
+        run: |
+          cd ClaudeWatch/build/Release-watchos
+          zip -qry ../../../ClaudeWatch-unsigned-app.zip *.app
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ClaudeWatch-unsigned-app
+          path: ClaudeWatch-unsigned-app.zip
+
+      - name: 上传编译日志（失败时）
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: watch-build-log
+          path: ClaudeWatch/xcodebuild.log
