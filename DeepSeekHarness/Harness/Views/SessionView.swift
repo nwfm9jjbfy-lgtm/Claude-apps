@@ -7,7 +7,9 @@ struct SessionView: View {
     @Environment(SessionStore.self) private var store
     @Environment(AgentHub.self) private var hub
     @State private var draft = ""
-    @State private var showInspector = true
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    // iPad 默认展开右侧面板；iPhone 上它是弹出的面板，默认收起
+    @State private var showInspector = false
     @FocusState private var inputFocused: Bool
 
     private var session: Session? { store.session(sessionID) }
@@ -24,7 +26,9 @@ struct SessionView: View {
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 modelPicker
-                Button { showInspector.toggle() } label: { Image(systemName: "sidebar.right") }
+                Button { showInspector.toggle() } label: {
+                    Image(systemName: sizeClass == .regular ? "sidebar.right" : "folder")
+                }
                     .keyboardShortcut("i", modifiers: [.command, .option])
             }
         }
@@ -34,7 +38,10 @@ struct SessionView: View {
                     .inspectorColumnWidth(min: 260, ideal: 320, max: 480)
             }
         }
-        .onAppear { if session?.messages.isEmpty == true { inputFocused = true } }
+        .onAppear {
+            if sizeClass == .regular { showInspector = true }
+            if session?.messages.isEmpty == true { inputFocused = true }
+        }
     }
 
     // MARK: 对话
@@ -52,7 +59,7 @@ struct SessionView: View {
                     }
                     statusBar.id("bottom")
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, sizeClass == .regular ? 24 : 12)
                 .padding(.vertical, 16)
                 .frame(maxWidth: 900)
                 .frame(maxWidth: .infinity)

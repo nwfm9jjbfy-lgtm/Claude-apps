@@ -1,6 +1,6 @@
 # DeepSeek Harness（iPad 版 Agent）
 
-一个运行在 iPad 上的 AI 智能体工作台。你描述任务，DeepSeek 自己制定计划、调用工具，一步步完成：读写文件、运行 JavaScript、抓取网页。所有操作都限制在这个任务自己的工作区文件夹里。
+一个运行在 iPad（也支持 iPhone）上的 AI 智能体工作台。你描述任务，DeepSeek 自己制定计划、调用工具，一步步完成：读写文件、运行 JavaScript、抓取网页。所有操作都限制在这个任务自己的工作区文件夹里。
 
 ## 界面
 
