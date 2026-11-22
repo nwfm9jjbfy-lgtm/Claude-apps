@@ -2,7 +2,7 @@
 import sys
 import lib
 mode, out = sys.argv[1], sys.argv[2]
-lib.W, lib.H = (1080, 1440) if mode == '34' else (1440, 1080)
+lib.W, lib.H = {'34': (1080, 1440), '43': (1440, 1080), '169': (1920, 1080)}[mode]
 from lib import *
 from PIL import Image
 import scenes
@@ -38,12 +38,27 @@ if mode == '34':
     text(fr, '黎曼猜想 × Lean：数学证明的机器裁判', W / 2, 995, 'serifr', 40, INK, 0.9, 'cm')
     status(1095, 38)
     text(fr, '截至 2026.11.22 · 结论待验证', W / 2, 1170, 'sans', 28, DIM, 1, 'cm')
-else:
+elif mode == '43':
     # 4:3 share card: the app draws a play button in the centre -> keep the middle band empty
     title(190, 92, 0)
     text(fr, '黎曼猜想 × Lean：数学证明的机器裁判', W / 2, 400, 'serifr', 40, INK, 0.9, 'cm')
     formulas(330, 620, 100, 48, 1110)
     status(915, 36)
     text(fr, '截至 2026.11.22 · 结论待验证', W / 2, 1000, 'sans', 26, DIM, 1, 'cm')
+
+else:
+    # Bilibili 16:9; everything that matters stays inside the centred 4:3 (x 240..1680),
+    # bottom ~12% kept clear for play count / duration overlays
+    import scenes as sc
+    for side, x0 in (('l', 40), ('r', 1700)):
+        for i in range(22):
+            ln = sc.LEAN[(i * 3 + (0 if side == 'l' else 7)) % len(sc.LEAN)]
+            text(fr, ln[:26], x0, 60 + i * 44, 'mono', 18, INK, 0.10)
+            mark(fr, 'check' if i != 15 else 'cross', x0 - 14 if side == 'l' else x0 - 14, 72 + i * 44, 12, 0.25)
+    text(fr, '黎曼猜想 × Lean', W / 2, 150, 'sansb', 40, GOLD, 1, 'cm')
+    title(430, 128, 0)
+    text(fr, '数学证明的机器裁判', W / 2, 700, 'serifr', 46, INK, 0.9, 'cm')
+    status(800, 46)
+    text(fr, '截至 2026.11.22 · 结论待验证', W / 2, 880, 'sans', 30, DIM, 1, 'cm')
 
 Image.fromarray(finish(fr, 0)).save(out)
