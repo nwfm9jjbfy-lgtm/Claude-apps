@@ -5,6 +5,12 @@ import cv2
 from PIL import Image, ImageDraw, ImageFont
 
 W, H, FPS = 1280, 720, 30
+import os as _os
+LANG = _os.environ.get('VIDEO_LANG', 'zh')
+if LANG == 'en':
+    from i18n_en import tr
+else:
+    tr = lambda s: s
 
 def hexc(h):
     h = h.lstrip('#')
@@ -188,8 +194,14 @@ def blit(fr, mask, x, y, color, alpha=1.0, anchor='lt', reveal=1.0, additive=Fal
         reg *= (1 - a)
         reg += a * c
 
-def text(fr, s, x, y, kind='sans', size=28, color=INK, alpha=1.0, anchor='lt', reveal=1.0, glow=0.0):
+def text(fr, s, x, y, kind='sans', size=28, color=INK, alpha=1.0, anchor='lt', reveal=1.0, glow=0.0, maxw=None):
+    s = tr(s)
+    if not s:
+        return (0, 0)
     m = text_mask(s, kind, size)
+    while maxw and m.shape[1] > maxw and size > 12:
+        size -= 1
+        m = text_mask(s, kind, size)
     if glow > 0:
         g, pad = glow_of(m, 8)
         gx = x - pad if anchor[0] == 'l' else x
@@ -198,9 +210,15 @@ def text(fr, s, x, y, kind='sans', size=28, color=INK, alpha=1.0, anchor='lt', r
     blit(fr, m, x, y, color, alpha, anchor, reveal)
     return m.shape
 
-def rich(fr, parts, x, y, size, alpha=1.0, anchor='c', reveal=1.0):
+def rich(fr, parts, x, y, size, alpha=1.0, anchor='c', reveal=1.0, maxw=None):
     """parts: [(text, kind, color)] laid out on one line; anchor horizontal c/l."""
+    parts = [(tr(p[0]), p[1], p[2]) for p in parts]
+    parts = [p for p in parts if p[0]]
+    maxw = maxw or (W - 100)
     ms, xs, tw, h = rich_mask(parts, size)
+    while tw > maxw and size > 12:
+        size -= 1
+        ms, xs, tw, h = rich_mask(parts, size)
     if anchor == 'c':
         x -= tw / 2
     for (s, k, col), m, ox in zip(parts, ms, xs):
@@ -282,7 +300,7 @@ def caption(fr, t, t0, t1, s, color=INK, size=34, y=640, kind='sans', parts=None
     if parts:
         rich(fr, parts, W / 2, y - 24 + dy, size, a)
     else:
-        text(fr, s, W / 2, y + dy, kind, size, color, a, 'cm')
+        text(fr, s, W / 2, y + dy, kind, size, color, a, 'cm', maxw=W - 100)
 
 def illustrative(fr, t, a=1.0, label='示意'):
     text(fr, label, W - 40, H - 28, 'sans', 16, DIM, 0.8 * a, 'rb')

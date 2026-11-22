@@ -27,7 +27,8 @@ def title(cy, size, gap_line):
     hline(fr, W / 2 - size * 3.6, W / 2 + size * 3.6, cy + size * 1.55, GOLD, 0.8, 3)
 
 def status(cy, size):
-    mark(fr, 'check', W / 2 - size * 7.3, cy, int(size * 1.2), 1.0)
+    tw = text_mask(tr('机器：通过'), 'sansb', size).shape[1]
+    mark(fr, 'check', W / 2 - size - tw - size * 0.9, cy, int(size * 1.2), 1.0)
     text(fr, '机器：通过', W / 2 - size * 1.0, cy, 'sansb', size, GREEN, 1, 'rm')
     text(fr, '人类：审阅中', W / 2 + size * 1.0, cy, 'sansb', size, GOLD, 1, 'lm')
 
