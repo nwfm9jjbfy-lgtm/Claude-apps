@@ -1,6 +1,7 @@
 """Scenes: each takes global time t and returns uint8 HxWx3."""
 import numpy as np
 from lib import *
+from timeline import bar, span, BARLEN, BEAT
 
 # ------------------------------------------------------------------ S0 hook
 FORMULAS = [
@@ -8,7 +9,7 @@ FORMULAS = [
     r'$=\prod_{p\ \mathrm{prime}}\frac{1}{1-p^{-s}}$',
     r'$\zeta(\rho)=0,\ \ 0<\mathrm{Re}\,\rho<1\ \ \Longrightarrow\ \ \mathrm{Re}\,\rho=\frac{1}{2}$',
 ]
-F_T = [2.30, 3.92, 5.43]       # each line starts on a downbeat
+F_T = [bar(0), bar(1), bar(2)]       # each line starts on a downbeat
 F_Y = [175, 315, 450]
 F_X = 220
 CHK_X = 1070
@@ -37,7 +38,7 @@ LEAN = [
 ]
 RED_IDX = 18   # the line that stops on the scan line
 
-def _formula_block(fr, t, dim=1.0, active_glow=True, q_t=6.92, show_q=True):
+def _formula_block(fr, t, dim=1.0, active_glow=True, q_t=bar(3), show_q=True):
     for i, (tex, t0, y) in enumerate(zip(FORMULAS, F_T, F_Y)):
         if t < t0:
             continue
@@ -54,7 +55,7 @@ def _formula_block(fr, t, dim=1.0, active_glow=True, q_t=6.92, show_q=True):
                 mark(fr, 'check', CHK_X, y, 34, dim, ease(prog(t, tc, 0.25)))
     if show_q and t >= q_t:
         p = ease(prog(t, q_t, 0.4))
-        pulse = 0.75 + 0.25 * np.cos((t - q_t) * 2 * np.pi * 161.5 / 60 / 2)
+        pulse = 0.75 + 0.25 * np.cos((t - q_t) * 2 * np.pi * 1 / BEAT / 2)
         text(fr, '?', CHK_X, F_Y[2], 'serif', 52, GOLD, dim * p * pulse, 'cm', glow=0.4)
 
 
@@ -63,7 +64,7 @@ def s0_hook(t):
     fr = background(t)
     LINE_H = 26
     scan_y = 360
-    code_a = ease(prog(t, 9.96, 0.35))
+    code_a = ease(prog(t, bar(5), 0.35))
     # formulas: dim out when the code pours in
     dim = 1 - 0.9 * code_a
     _formula_block(fr, t, dim, show_q=True)
@@ -71,25 +72,25 @@ def s0_hook(t):
         on = 1.0 if (t * 2.2) % 1 < 0.6 else 0.15
         rect(fr, F_X, F_Y[0] - 26, F_X + 4, F_Y[0] + 26, GOLD, on * ease(prog(t, 0.3, 0.4)) * (1 - prog(t, 2.3, 0.3)))
     # caption
-    caption(fr, t, 2.30, 5.30, '1859 年，黎曼写下一个猜想')
-    caption(fr, t, 5.43, 8.30, '167 年，没人证明它')
-    caption(fr, t, 8.43, 11.30, None, parts=[('这周，它可能被 ', 'sans', INK), ('AI', 'sansb', GOLD), (' 啃下来了', 'sans', INK)])
-    caption(fr, t, 11.40, 12.86 + 0.3, None, parts=[('但', 'sans', INK), ('先别信', 'sansb', RED)], size=40)
+    caption(fr, t, bar(0), bar(2) - 0.12, '1859 年，黎曼写下一个猜想')
+    caption(fr, t, bar(2), bar(4) - 0.12, '167 年，没人证明它')
+    caption(fr, t, bar(4), bar(6) - 0.1, None, parts=[('这周，它可能被 ', 'sans', INK), ('AI', 'sansb', GOLD), (' 啃下来了', 'sans', INK)])
+    caption(fr, t, bar(6), bar(7) + 0.3, None, parts=[('但', 'sans', INK), ('先别信', 'sansb', RED)], size=40)
     if code_a <= 0:
         return finish(fr, t)
     # ---------- code waterfall ----------
     # lines enter from below and scroll up; decelerate so that RED line rests on scan line
-    p = prog(t, 9.96, 11.40 - 9.96)
+    p = prog(t, bar(5), BARLEN)
     end_off = 250 + RED_IDX * LINE_H - scan_y          # base_y + idx*LH - off == scan_y
     start_off = end_off - 1800
-    off = start_off + (end_off - start_off) * ease(p) if t < 11.40 else end_off
+    off = start_off + (end_off - start_off) * ease(p) if t < bar(6) else end_off
     # repeat the listing upward so the screen is full while scrolling
-    stopped = t >= 11.40
+    stopped = t >= bar(6)
     for k in range(-80, 22):
         idx = k % len(LEAN)
         y = 250 + k * LINE_H - off
         if k > RED_IDX:
-            y += 30 * ease(prog(t, 11.45, 0.3))
+            y += 30 * ease(prog(t, bar(6) + 0.05, 0.3))
         if y < -30 or y > H - 110:
             continue
         is_red = k == RED_IDX and stopped
@@ -98,7 +99,7 @@ def s0_hook(t):
         col = INK
         if is_red:
             a = code_a
-            rp = ease(prog(t, 11.40, 0.2))
+            rp = ease(prog(t, bar(6), 0.2))
             rect(fr, 150, y - 2, 1130, y + 22, RED, 0.16 * rp)
             col = RED
         text(fr, LEAN[idx], 190, y, 'mono', 15, col, a)
@@ -107,7 +108,7 @@ def s0_hook(t):
             mark(fr, 'check', 165, y + 10, 14, a * 1.2)
         if is_red:
             mark(fr, 'cross', 165, y + 10, 16, code_a)
-            ep = ease(prog(t, 11.55, 0.35))
+            ep = ease(prog(t, bar(6) + 0.15, 0.35))
             text(fr, 'error: unsolved goals  ⊢ ρ.re = 1 / 2', 190, y + 28, 'mono', 15, RED, ep, reveal=ep)
     # scan line
     hline(fr, 150, 1130, scan_y + 25, GOLD, 0.25 * code_a, 1)
@@ -117,7 +118,7 @@ def s0_hook(t):
 
 # ------------------------------------------------------------------ S1 title
 def s1_title(t):
-    T0 = 12.86
+    T0 = bar(7)
     fr = background(t, lamp=1.3)
     lt = t - T0
     a = ease(prog(lt, 0.05, 0.6))
@@ -126,15 +127,15 @@ def s1_title(t):
          W / 2, 262 + dy, 60, a)
     lp = ease_io(prog(lt, 0.55, 0.9))
     hline(fr, W / 2 - 330 * lp, W / 2 + 330 * lp, 372, GOLD, 0.8, 2)
-    sa = ease(prog(lt, 1.44, 0.5))
+    sa = ease(prog(lt, BARLEN, 0.5))
     text(fr, '数学证明的机器裁判', W / 2, 420 + 6 * (1 - sa), 'serifr', 32, INK, 0.9 * sa, 'cm')
-    na = ease(prog(lt, 2.91, 0.5))
+    na = ease(prog(lt, 2 * BARLEN, 0.5))
     text(fr, '-- 截至 2026.11.22 · 结论待数学界审阅', W / 2, 500, 'mono', 18, DIM, na, 'cm',
-         reveal=ease(prog(lt, 2.91, 0.8)))
+         reveal=ease(prog(lt, 2 * BARLEN, 0.8)))
     return finish(fr, t)
 
 
 SCENES = [
-    ('s0_hook', 0.0, 12.86, s0_hook),
-    ('s1_title', 12.86, 18.69, s1_title),
+    ('s0_hook', *span('s0_hook'), s0_hook),
+    ('s1_title', *span('s1_title'), s1_title),
 ]

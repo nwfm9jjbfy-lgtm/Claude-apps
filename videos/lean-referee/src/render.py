@@ -38,7 +38,7 @@ if __name__ == '__main__':
     end = scenes.SCENES[[s[0] for s in scenes.SCENES].index(names[-1])][2]
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', os.path.join(d, 'list.txt'),
                     '-c', 'copy', os.path.join(d, 'video.mp4')], check=True)
-    music = os.path.join(ROOT, 'audio', 'music.wav')
+    music = os.path.join(ROOT, 'audio', 'score.wav')
     af = 'afade=t=out:st=%.2f:d=0.8' % (end - 0.8) if end < 150 else 'anull'
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', os.path.join(d, 'video.mp4'), '-i', music, '-t', f'{end:.3f}',
                     '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-af', af, '-c:a', 'aac', '-b:a', '192k',
