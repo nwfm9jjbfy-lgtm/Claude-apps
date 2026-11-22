@@ -286,3 +286,34 @@ def caption(fr, t, t0, t1, s, color=INK, size=34, y=640, kind='sans', parts=None
 
 def illustrative(fr, t, a=1.0, label='示意'):
     text(fr, label, W - 40, H - 28, 'sans', 16, DIM, 0.8 * a, 'rb')
+
+
+@functools.lru_cache(64)
+def disc(r):
+    s = int(np.ceil(r * 2 + 4))
+    yy, xx = np.mgrid[0:s, 0:s].astype(np.float32) - (s - 1) / 2
+    return np.clip(r + 0.5 - np.sqrt(xx ** 2 + yy ** 2), 0, 1)
+
+
+def dot(fr, x, y, r, color, alpha=1.0, glow=0.0):
+    if glow > 0:
+        g, pad = glow_of(disc(r), max(3, r))
+        blit(fr, g, x, y, color, alpha * glow, 'cm', additive=True)
+    blit(fr, disc(r), x, y, color, alpha, 'cm')
+
+
+def vline(fr, x, y0, y1, color, alpha=1.0, th=2, dash=0):
+    if dash <= 0:
+        rect(fr, x - th / 2, y0, x + th / 2, y1, color, alpha)
+        return
+    y = y0
+    while y < y1:
+        rect(fr, x - th / 2, y, x + th / 2, min(y1, y + dash), color, alpha)
+        y += dash * 2
+
+
+def frame_box(fr, x0, y0, x1, y1, color, alpha=1.0, th=1):
+    hline(fr, x0, x1, y0, color, alpha, th)
+    hline(fr, x0, x1, y1, color, alpha, th)
+    vline(fr, x0, y0, y1, color, alpha, th)
+    vline(fr, x1, y0, y1, color, alpha, th)
